@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 style="color: #667eea; margin-bottom: 1rem;">Upload Training Images</h2>
+    <p style="color: #666; margin-bottom: 2rem;">
+        Upload multiple images for training. Images will be converted to JPG and saved.
+        After uploading, please retrain the model in Kaggle using <code>train.ipynb</code>.
+    </p>
+
+    {% if success %}
+    <div class="success">
+        <strong>Success!</strong> {{ count }} image(s) saved. Please retrain in Kaggle using <code>train.ipynb</code>.
+    </div>
+    {% endif %}
+
+    <form action="/train" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="files">Select Images (multiple allowed)</label>
+            <input type="file" name="files" id="files" multiple accept="image/*" required>
+        </div>
+        <button type="submit" class="btn">Upload Images</button>
+    </form>
+</div>
+{% endblock %}

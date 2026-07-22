@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card result-card">
+    <h2 style="color: #667eea; margin-bottom: 1rem;">Classification Result</h2>
+
+    <div class="class-label">{{ result.predicted_class }}</div>
+    <div class="confidence">Confidence: {{ "%.2f"|format(result.confidence * 100) }}%</div>
+
+    <div style="margin-top: 1.5rem; color: #666;">
+        <p>Image saved to: {{ result.image_path }}</p>
+        <p>Classified at: {{ result.created_at }}</p>
+    </div>
+
+    <div style="margin-top: 2rem;">
+        <a href="/classify" class="btn">Classify Another</a>
+        <a href="/history" class="btn" style="margin-left: 1rem;">View History</a>
+    </div>
+</div>
+{% endblock %}

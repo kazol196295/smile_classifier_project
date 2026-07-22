@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 style="color: #667eea; margin-bottom: 1rem;">Classify an Image</h2>
+    <p style="color: #666; margin-bottom: 2rem;">
+        Upload a single image to classify it as smiling or not smiling.
+    </p>
+
+    <form action="/classify" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">Select Image</label>
+            <input type="file" name="file" id="file" accept="image/*" required>
+        </div>
+        <button type="submit" class="btn">Classify Image</button>
+    </form>
+</div>
+{% endblock %}

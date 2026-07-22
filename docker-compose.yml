@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: smile_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - YSDTP_B5_AI_YourID
+    ports:
+      - "5433:5432"
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/smile_db
+    ports:
+      - "8000:8000"
+    networks:
+      - YSDTP_B5_AI_YourID
+    volumes:
+      - ./model:/app/model
+      - ./static/uploaded_images:/app/static/uploaded_images
+
+volumes:
+  pgdata:
+
+networks:
+  YSDTP_B5_AI_YourID:
+    driver: bridge
