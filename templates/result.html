@@ -1,24 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card result-card">
-    <h2 style="color: #667eea; margin-bottom: 1rem;">Classification Result</h2>
-
-    <div style="text-align: center; margin-bottom: 1.5rem;">
-        <img src="/static/uploaded_images/{{ result.image_path.split('/')[-1] }}" 
-             alt="Uploaded image" 
-             style="max-width: 300px; max-height: 300px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    </div>
+    <img src="/static/uploaded_images/{{ result.image_path.split('/')[-1] }}" 
+         alt="Uploaded image" 
+         style="width: 280px; height: 280px; object-fit: cover; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
 
     <div class="class-label">{{ result.predicted_class }}</div>
-    <div class="confidence">Confidence: {{ "%.2f"|format(result.confidence * 100) }}%</div>
+    <div class="confidence">{{ "%.0f"|format(result.confidence * 100) }}% confident</div>
 
-    <div style="margin-top: 1.5rem; color: #666;">
-        <p>Classified at: {{ result.created_at }}</p>
-    </div>
-
-    <div style="margin-top: 2rem;">
-        <a href="/classify" class="btn">Classify Another</a>
-        <a href="/history" class="btn" style="margin-left: 1rem;">View History</a>
+    <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
+        <a href="/classify" class="btn">Classify More</a>
+        <a href="/history" class="btn btn-ghost">History</a>
     </div>
 </div>
 {% endblock %}

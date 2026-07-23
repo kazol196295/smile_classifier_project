@@ -1,27 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
-    <h2 style="color: #667eea; margin-bottom: 1rem;">Welcome to Smile Classifier</h2>
-    <p style="line-height: 1.8; color: #555; margin-bottom: 2rem;">
-        This application uses machine learning to classify images as smiling or not smiling.
-        The model was trained using scikit-learn on Kaggle and deployed as a FastAPI web application.
+<div class="card" style="text-align: center; padding: 3rem 2.5rem;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">Smile</div>
+    <h1 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        AI-Powered Smile Detection
+    </h1>
+    <p style="color: #6b7280; font-size: 1.1rem; margin-bottom: 2.5rem; max-width: 500px; margin-left: auto; margin-right: auto;">
+        Upload a photo. Get instant results.
     </p>
 
-    <div class="info-section">
-        <h3>How It Works</h3>
-        <p>The smile classifier uses a machine learning pipeline:</p>
-        <ul>
-            <li><strong>Training:</strong> Done in Kaggle using <code>train.ipynb</code></li>
-            <li><strong>Model:</strong> Scikit-learn classifier (Logistic Regression / Random Forest)</li>
-            <li><strong>Preprocessing:</strong> Images resized to 64x64, converted to grayscale, flattened, normalized</li>
-            <li><strong>Inference:</strong> Local <code>inference.py</code> loads the pre-trained model</li>
-        </ul>
-    </div>
-
-    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-        <a href="/train" class="btn">Upload Training Images</a>
-        <a href="/classify" class="btn">Classify an Image</a>
-        <a href="/history" class="btn">View History</a>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="/classify" class="btn">Classify Now</a>
+        <a href="/train" class="btn btn-ghost">Train Model</a>
+        <a href="/history" class="btn btn-ghost">History</a>
     </div>
 </div>
 {% endblock %}

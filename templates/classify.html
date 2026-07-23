@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
-    <h2 style="color: #667eea; margin-bottom: 1rem;">Classify Images</h2>
-    <p style="color: #666; margin-bottom: 2rem;">
-        Upload one or more images to classify them as smiling or not smiling.
-    </p>
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">Upload</div>
+        <h2 style="font-size: 1.5rem; font-weight: 600;">Classify Images</h2>
+    </div>
 
     <form action="/classify" method="post" enctype="multipart/form-data">
         <div class="form-group">
-            <label for="files">Select Images</label>
             <input type="file" name="files" id="files" accept="image/*" multiple required>
-            <small style="color: #999;">Hold Ctrl/Cmd to select multiple images</small>
         </div>
-        <button type="submit" class="btn">Classify Images</button>
+        <div style="text-align: center;">
+            <button type="submit" class="btn">Classify</button>
+        </div>
     </form>
 </div>
 {% endblock %}
