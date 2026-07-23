@@ -163,10 +163,10 @@
     <nav class="navbar">
         <h1>Smile Classifier</h1>
         <ul class="nav-links">
-            <li><a href="/" class="active">Home</a></li>
-            <li><a href="/train">Train</a></li>
-            <li><a href="/classify">Classify</a></li>
-            <li><a href="/history">History</a></li>
+            <li><a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Home</a></li>
+            <li><a href="/train" class="{% if request.url.path == '/train' %}active{% endif %}">Train</a></li>
+            <li><a href="/classify" class="{% if request.url.path == '/classify' %}active{% endif %}">Classify</a></li>
+            <li><a href="/history" class="{% if request.url.path == '/history' %}active{% endif %}">History</a></li>
         </ul>
     </nav>
     <div class="container">

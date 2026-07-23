@@ -10,6 +10,7 @@ dist/
 build/
 eggs/
 *.whl
+dataset/
 
 # Virtual environments
 venv/
@@ -49,3 +50,5 @@ Thumbs.db
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
+
+

@@ -3,11 +3,16 @@
 <div class="card result-card">
     <h2 style="color: #667eea; margin-bottom: 1rem;">Classification Result</h2>
 
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <img src="/static/uploaded_images/{{ result.image_path.split('/')[-1] }}" 
+             alt="Uploaded image" 
+             style="max-width: 300px; max-height: 300px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    </div>
+
     <div class="class-label">{{ result.predicted_class }}</div>
     <div class="confidence">Confidence: {{ "%.2f"|format(result.confidence * 100) }}%</div>
 
     <div style="margin-top: 1.5rem; color: #666;">
-        <p>Image saved to: {{ result.image_path }}</p>
         <p>Classified at: {{ result.created_at }}</p>
     </div>
 

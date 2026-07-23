@@ -1,24 +1,65 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
-    <h2 style="color: #667eea; margin-bottom: 1rem;">Upload Training Images</h2>
+    <h2 style="color: #667eea; margin-bottom: 1rem;">Train Model Locally</h2>
     <p style="color: #666; margin-bottom: 2rem;">
-        Upload multiple images for training. Images will be converted to JPG and saved.
-        After uploading, please retrain the model in Kaggle using <code>train.ipynb</code>.
+        Select two folders containing smile and non-smile images to train the model locally.
+        The model will be trained using SVM and saved as <code>smile_classifier.pkl</code>.
     </p>
 
     {% if success %}
     <div class="success">
-        <strong>Success!</strong> {{ count }} image(s) saved. Please retrain in Kaggle using <code>train.ipynb</code>.
+        <strong>Success!</strong> {{ message }}<br>
+        Smile images: {{ smile_count }} | Non-smile images: {{ non_smile_count }} | Total: {{ total_count }}<br>
+        Accuracy: {{ accuracy }}%
     </div>
     {% endif %}
 
-    <form action="/train" method="post" enctype="multipart/form-data">
+    {% if error %}
+    <div class="error">
+        <strong>Error!</strong> {{ message }}
+    </div>
+    {% endif %}
+
+    <form action="/train" method="post" enctype="multipart/form-data" id="trainForm">
         <div class="form-group">
-            <label for="files">Select Images (multiple allowed)</label>
-            <input type="file" name="files" id="files" multiple accept="image/*" required>
+            <label for="smile_folder">Select Smile Folder</label>
+            <input type="file" name="smile_folder" id="smile_folder" webkitdirectory multiple required>
+            <small style="color: #888;">Choose the folder containing smile images</small>
+            <div id="smile_count" style="font-size: 0.85rem; color: #667eea; margin-top: 5px; font-weight: bold;"></div>
         </div>
-        <button type="submit" class="btn">Upload Images</button>
+        <div class="form-group">
+            <label for="non_smile_folder">Select Non-Smile Folder</label>
+            <input type="file" name="non_smile_folder" id="non_smile_folder" webkitdirectory multiple required>
+            <small style="color: #888;">Choose the folder containing non-smile images</small>
+            <div id="non_smile_count" style="font-size: 0.85rem; color: #667eea; margin-top: 5px; font-weight: bold;"></div>
+        </div>
+        <button type="submit" class="btn" id="trainBtn">Train Model</button>
     </form>
 </div>
+
+<script>
+// Show how many files were selected
+function updateFileCount(inputId, displayId) {
+    const input = document.getElementById(inputId);
+    const display = document.getElementById(displayId);
+    input.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+            display.textContent = `${this.files.length} files selected`;
+        } else {
+            display.textContent = '';
+        }
+    });
+}
+
+updateFileCount('smile_folder', 'smile_count');
+updateFileCount('non_smile_folder', 'non_smile_count');
+
+// Handle form submission UI
+document.getElementById('trainForm').addEventListener('submit', function() {
+    var btn = document.getElementById('trainBtn');
+    btn.disabled = true;
+    btn.textContent = 'Training... Please wait';
+});
+</script>
 {% endblock %}

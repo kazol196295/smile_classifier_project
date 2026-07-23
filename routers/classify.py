@@ -32,39 +32,48 @@ async def classify_page(request: Request):
 @router.post("/classify")
 async def classify_image(
     request: Request,
-    file: UploadFile = File(...),
+    files: list[UploadFile] = File(...),
     db: Session = Depends(get_db)
 ):
     os.makedirs(UPLOAD_DIR, exist_ok=True)
+    results = []
 
-    contents = await file.read()
-    jpg_bytes = convert_to_jpg(contents)
-    filename = f"{uuid.uuid4()}.jpg"
-    filepath = os.path.join(UPLOAD_DIR, filename)
+    for file in files:
+        contents = await file.read()
+        jpg_bytes = convert_to_jpg(contents)
+        filename = f"{uuid.uuid4()}.jpg"
+        filepath = os.path.join(UPLOAD_DIR, filename)
 
-    with open(filepath, "wb") as f:
-        f.write(jpg_bytes)
+        with open(filepath, "wb") as f:
+            f.write(jpg_bytes)
 
-    image = Image.open(io.BytesIO(jpg_bytes))
-    result = predict(image)
+        image = Image.open(io.BytesIO(jpg_bytes))
+        result = predict(image)
 
-    db_result = ClassificationResult(
-        image_path=filepath,
-        predicted_class=result["class"],
-        created_at=datetime.utcnow()
-    )
-    db.add(db_result)
-    db.commit()
-    db.refresh(db_result)
+        db_result = ClassificationResult(
+            image_path=filepath,
+            predicted_class=result["class"],
+            created_at=datetime.utcnow()
+        )
+        db.add(db_result)
+        db.commit()
+        db.refresh(db_result)
 
-    return templates.TemplateResponse(request, "result.html", {
-        "result": {
+        results.append({
             "id": db_result.id,
             "image_path": filepath,
             "predicted_class": result["class"],
             "confidence": result["confidence"],
             "created_at": db_result.created_at
-        }
+        })
+
+    if len(results) == 1:
+        return templates.TemplateResponse(request, "result.html", {
+            "result": results[0]
+        })
+
+    return templates.TemplateResponse(request, "results.html", {
+        "results": results
     })
 
 

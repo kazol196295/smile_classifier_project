@@ -1,22 +1,12 @@
-import uuid
 import os
-from fastapi import APIRouter, Request, UploadFile, File
+import shutil
+import tempfile
+from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
-from PIL import Image
-import io
-from config import UPLOAD_DIR
+from train_local import train_model
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
-
-
-def convert_to_jpg(image_bytes: bytes) -> bytes:
-    img = Image.open(io.BytesIO(image_bytes))
-    if img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=85)
-    return buf.getvalue()
 
 
 @router.get("/train")
@@ -25,21 +15,60 @@ async def train_page(request: Request):
 
 
 @router.post("/train")
-async def upload_for_training(request: Request, files: list[UploadFile] = File(...)):
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    saved_count = 0
+async def train_local_model(request: Request):
+    form = await request.form(max_files=10000, max_fields=10000)
+    smile_folder = form.getlist("smile_folder")
+    non_smile_folder = form.getlist("non_smile_folder")
 
-    for file in files:
-        contents = await file.read()
-        jpg_bytes = convert_to_jpg(contents)
-        filename = f"{uuid.uuid4()}.jpg"
-        filepath = os.path.join(UPLOAD_DIR, filename)
+    if not smile_folder or not non_smile_folder:
+        return templates.TemplateResponse(request, "train.html", {
+            "error": True,
+            "message": "Please select both smile and non-smile folders."
+        })
 
-        with open(filepath, "wb") as f:
-            f.write(jpg_bytes)
-        saved_count += 1
+    temp_dir = tempfile.mkdtemp()
 
-    return templates.TemplateResponse(request, "train.html", {
-        "success": True,
-        "count": saved_count
-    })
+    try:
+        smile_dir = os.path.join(temp_dir, "smile")
+        non_smile_dir = os.path.join(temp_dir, "non_smile")
+        os.makedirs(smile_dir)
+        os.makedirs(non_smile_dir)
+
+        for file in smile_folder:
+            if file.filename:
+                filepath = os.path.join(smile_dir, os.path.basename(file.filename))
+                content = await file.read()
+                with open(filepath, "wb") as f:
+                    f.write(content)
+
+        for file in non_smile_folder:
+            if file.filename:
+                filepath = os.path.join(non_smile_dir, os.path.basename(file.filename))
+                content = await file.read()
+                with open(filepath, "wb") as f:
+                    f.write(content)
+
+        result = train_model(smile_dir, non_smile_dir)
+
+        if result["success"]:
+            return templates.TemplateResponse(request, "train.html", {
+                "success": True,
+                "message": result["message"],
+                "accuracy": result["accuracy"],
+                "smile_count": result["smile_count"],
+                "non_smile_count": result["non_smile_count"],
+                "total_count": result["total_count"]
+            })
+        else:
+            return templates.TemplateResponse(request, "train.html", {
+                "error": True,
+                "message": result["message"]
+            })
+
+    except Exception as e:
+        return templates.TemplateResponse(request, "train.html", {
+            "error": True,
+            "message": f"Training failed: {str(e)}"
+        })
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)

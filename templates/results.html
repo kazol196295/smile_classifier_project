@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 style="color: #667eea; margin-bottom: 1rem;">Classification Results</h2>
+    <p style="color: #666; margin-bottom: 2rem;">
+        Successfully classified {{ results|length }} image(s).
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+        {% for result in results %}
+        <div style="background: #f8f9fa; border-radius: 10px; padding: 1rem; text-align: center;">
+            <img src="/static/uploaded_images/{{ result.image_path.split('/')[-1] }}" 
+                 alt="Uploaded image" 
+                 style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem;">
+            <div class="class-label" style="font-size: 1.1rem;">{{ result.predicted_class }}</div>
+            <div class="confidence" style="font-size: 0.9rem;">Confidence: {{ "%.2f"|format(result.confidence * 100) }}%</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="/classify" class="btn">Classify More</a>
+        <a href="/history" class="btn" style="margin-left: 1rem;">View History</a>
+    </div>
+</div>
+{% endblock %}
