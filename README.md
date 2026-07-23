@@ -1,4 +1,4 @@
-# Smile Classifier - YourID
+# Smile Classifier - 30238
 
 A web application that classifies whether a person in an image is smiling or not smiling using a machine learning model trained with scikit-learn.
 
