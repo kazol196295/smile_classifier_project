@@ -1,0 +1,17 @@
+.git
+__pycache__
+*.pyc
+*.pyo
+venv/
+.venv/
+.env
+smile_db.sqlite
+*.md
+plan.md
+AGENTS.md
+ai_framework_libraries_deployment_mini_project.md
+kaggle/
+dataset/
+static/uploaded_images/*
+!static/uploaded_images/.gitkeep
+smile-classifier-arm64.tar
