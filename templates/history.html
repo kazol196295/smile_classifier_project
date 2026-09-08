@@ -24,8 +24,9 @@
                              style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
                     </td>
                     <td>
-                        <span class="badge {% if 'smile' in result.predicted_class.lower() and 'not' not in result.predicted_class.lower() %}badge-smile{% else %}badge-nosmile{% endif %}">
-                            {{ result.predicted_class }}
+                        {% set is_smile = result.predicted_class == 'smiling' %}
+                        <span class="badge {% if is_smile %}badge-smile{% else %}badge-nosmile{% endif %}">
+                            {{ '😊 Smiling' if is_smile else '😢 Not Smiling' }}
                         </span>
                     </td>
                     <td>{{ result.created_at.strftime('%b %d, %Y %H:%M') if result.created_at else '' }}</td>

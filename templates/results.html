@@ -13,7 +13,9 @@
             <img src="/static/uploaded_images/{{ result.image_path.split('/')[-1] }}" 
                  alt="Image" 
                  style="width: 100%; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem;">
-            <div style="font-size: 1.1rem; font-weight: 600; color: #1e1b4b;">{{ result.predicted_class }}</div>
+            {% set is_smile = result.predicted_class == 'smiling' %}
+            <div style="font-size: 2rem;">{{ '😊' if is_smile else '😢' }}</div>
+            <div style="font-size: 1.1rem; font-weight: 600; color: #1e1b4b;">{{ 'Smiling' if is_smile else 'Not Smiling' }}</div>
             <div style="font-size: 0.85rem; color: #6b7280;">{{ "%.0f"|format(result.confidence * 100) }}%</div>
         </div>
         {% endfor %}

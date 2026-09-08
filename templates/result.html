@@ -1,11 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card result-card">
-    <img src="/static/uploaded_images/{{ result.image_path.split('/')[-1] }}" 
-         alt="Uploaded image" 
+    {% set is_smile = result.predicted_class == 'smiling' %}
+    {% set emoji = '😊' if is_smile else '😢' %}
+    {% set label = 'Smiling' if is_smile else 'Not Smiling' %}
+
+    <img src="/static/uploaded_images/{{ result.image_path.split('/')[-1] }}"
+         alt="Uploaded image"
          style="width: 280px; height: 280px; object-fit: cover; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
 
-    <div class="class-label">{{ result.predicted_class }}</div>
+    <div style="font-size: 4rem; margin-top: 1rem;">{{ emoji }}</div>
+    <div class="class-label">{{ label }}</div>
     <div class="confidence">{{ "%.0f"|format(result.confidence * 100) }}% confident</div>
 
     <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">

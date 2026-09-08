@@ -8,7 +8,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
-      - YSDTP_B5_AI_YourID
+      - YSDTP_B5_AI_30238
     ports:
       - "5433:5432"
     healthcheck:
@@ -27,7 +27,7 @@ services:
     ports:
       - "8000:8000"
     networks:
-      - YSDTP_B5_AI_YourID
+      - YSDTP_B5_AI_30238
     volumes:
       - ./model:/app/model
       - ./static/uploaded_images:/app/static/uploaded_images
@@ -37,5 +37,5 @@ volumes:
   pgdata:
 
 networks:
-  YSDTP_B5_AI_YourID:
+  YSDTP_B5_AI_30238:
     driver: bridge

@@ -1,18 +1,297 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+    .mode-tabs { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 2rem; }
+    .mode-tab {
+        border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
+        padding: 0.6rem 1.6rem; border-radius: 50px; cursor: pointer;
+        font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease;
+    }
+    .mode-tab.active { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border-color: transparent; }
+
+    .camera-stage { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; }
+    #video {
+        width: 100%; max-width: 480px; border-radius: 16px; background: #111;
+        aspect-ratio: 4/3; object-fit: cover;
+    }
+    .cam-msg { color: #b91c1c; font-size: 0.85rem; font-weight: 600; min-height: 1.2em; text-align: center; }
+
+    .crop-wrap {
+        position: relative; display: inline-block; max-width: 480px; width: 100%;
+        user-select: none; touch-action: none; cursor: crosshair;
+    }
+    .crop-wrap img { display: block; width: 100%; border-radius: 16px; }
+    .crop-selection {
+        position: absolute; border: 2px solid #fff;
+        box-shadow: 0 0 0 100000px rgba(0,0,0,0.55);
+        cursor: move;
+    }
+    .crop-handle {
+        position: absolute; width: 14px; height: 14px; background: #fff;
+        border: 2px solid #667eea; border-radius: 50%;
+    }
+    .crop-handle.nw { top: -8px; left: -8px; cursor: nwse-resize; }
+    .crop-handle.ne { top: -8px; right: -8px; cursor: nesw-resize; }
+    .crop-handle.sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
+    .crop-handle.se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+
+    #final-img { max-width: 320px; width: 100%; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .step-hint { color: #6b7280; font-size: 0.9rem; text-align: center; margin: 0; }
+</style>
+
 <div class="card">
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">Upload</div>
-        <h2 style="font-size: 1.5rem; font-weight: 600;">Classify Images</h2>
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 600;">Classify a Photo</h2>
+        <p style="color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem;">Upload a file or take one with your camera.</p>
     </div>
 
-    <form action="/classify" method="post" enctype="multipart/form-data">
-        <div class="form-group">
-            <input type="file" name="files" id="files" accept="image/*" multiple required>
+    <div class="mode-tabs">
+        <button type="button" class="mode-tab active" data-mode="upload">Upload</button>
+        <button type="button" class="mode-tab" data-mode="camera">Take photo</button>
+    </div>
+
+    <div id="upload-panel">
+        <form action="/classify" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Choose image(s)</label>
+                <input type="file" name="files" accept="image/*" multiple required>
+            </div>
+            <div style="text-align: center;">
+                <button type="submit" class="btn">Classify</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="camera-panel" hidden>
+        <div id="camera-step" class="camera-stage">
+            <video id="video" autoplay playsinline muted></video>
+            <div class="cam-msg" id="camera-msg"></div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                <button type="button" class="btn" id="open-camera">Open camera</button>
+                <button type="button" class="btn btn-ghost" id="capture" disabled>Capture</button>
+            </div>
+            <p class="step-hint">Camera requires a secure (https) or localhost connection.</p>
         </div>
-        <div style="text-align: center;">
-            <button type="submit" class="btn">Classify</button>
+
+        <div id="crop-step" class="camera-stage" hidden>
+            <p class="step-hint">Drag to draw a crop box, drag inside to move, use the corners to resize.</p>
+            <div class="crop-wrap" id="crop-wrap">
+                <img id="crop-img" alt="Captured">
+                <div class="crop-selection" id="crop-selection" hidden>
+                    <div class="crop-handle nw" data-handle="nw"></div>
+                    <div class="crop-handle ne" data-handle="ne"></div>
+                    <div class="crop-handle sw" data-handle="sw"></div>
+                    <div class="crop-handle se" data-handle="se"></div>
+                </div>
+            </div>
+            <div class="cam-msg" id="crop-msg"></div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                <button type="button" class="btn" id="apply-crop">Apply crop</button>
+                <button type="button" class="btn btn-ghost" id="retake">Retake</button>
+            </div>
         </div>
-    </form>
+
+        <div id="preview-step" class="camera-stage" hidden>
+            <p class="step-hint">Cropped photo ready.</p>
+            <img id="final-img" alt="Cropped">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                <button type="button" class="btn" id="classify-camera">Classify photo</button>
+                <button type="button" class="btn btn-ghost" id="crop-again">Crop again</button>
+            </div>
+        </div>
+
+        <form id="camera-form" action="/classify" method="post" enctype="multipart/form-data" style="display:none;">
+            <input type="file" name="files" id="camera-file" accept="image/jpeg">
+        </form>
+    </div>
 </div>
+
+<script>
+(function () {
+    const uploadPanel = document.getElementById('upload-panel');
+    const cameraPanel = document.getElementById('camera-panel');
+    const tabButtons = document.querySelectorAll('.mode-tab');
+    let stream = null;
+
+    function setMode(mode) {
+        const camera = mode === 'camera';
+        uploadPanel.hidden = camera;
+        cameraPanel.hidden = !camera;
+        tabButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+        if (!camera && stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    }
+    tabButtons.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+    const video = document.getElementById('video');
+    const openCameraBtn = document.getElementById('open-camera');
+    const captureBtn = document.getElementById('capture');
+    const cameraMsg = document.getElementById('camera-msg');
+    const cameraStep = document.getElementById('camera-step');
+    const cropStep = document.getElementById('crop-step');
+    const previewStep = document.getElementById('preview-step');
+
+    function showStep(name) {
+        cameraStep.hidden = name !== 'camera';
+        cropStep.hidden = name !== 'crop';
+        previewStep.hidden = name !== 'preview';
+    }
+
+    openCameraBtn.addEventListener('click', async () => {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+                audio: false
+            });
+            video.srcObject = stream;
+            await video.play();
+            cameraMsg.textContent = '';
+            captureBtn.disabled = false;
+        } catch (err) {
+            cameraMsg.textContent = err && err.name === 'NotAllowedError'
+                ? 'Camera access was denied. Allow camera permission in your browser and try again.'
+                : 'Camera unavailable: ' + (err ? err.message : 'unknown error');
+        }
+    });
+
+    captureBtn.addEventListener('click', () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        cropImg.src = canvas.toDataURL('image/jpeg', 0.9);
+        showStep('crop');
+    });
+
+    const cropWrap = document.getElementById('crop-wrap');
+    const cropImg = document.getElementById('crop-img');
+    const selection = document.getElementById('crop-selection');
+    const cropMsg = document.getElementById('crop-msg');
+    const applyCropBtn = document.getElementById('apply-crop');
+    const retakeBtn = document.getElementById('retake');
+    const finalImg = document.getElementById('final-img');
+    const classifyCameraBtn = document.getElementById('classify-camera');
+    const cropAgainBtn = document.getElementById('crop-again');
+    const cameraFile = document.getElementById('camera-file');
+    const cameraForm = document.getElementById('camera-form');
+
+    let rect = { x: 0, y: 0, w: 0, h: 0 };
+    let drag = null;
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function getPos(e) {
+        const r = cropImg.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+    function imgWidth() { return cropImg.getBoundingClientRect().width; }
+    function imgHeight() { return cropImg.getBoundingClientRect().height; }
+    function inside(pos) {
+        return pos.x >= rect.x && pos.x <= rect.x + rect.w && pos.y >= rect.y && pos.y <= rect.y + rect.h;
+    }
+    function normalize(x1, y1, x2, y2) {
+        return { x: Math.min(x1, x2), y: Math.min(y1, y2), w: Math.abs(x2 - x1), h: Math.abs(y2 - y1) };
+    }
+    function renderSel() {
+        selection.hidden = false;
+        selection.style.left = rect.x + 'px';
+        selection.style.top = rect.y + 'px';
+        selection.style.width = rect.w + 'px';
+        selection.style.height = rect.h + 'px';
+    }
+    function resetSelection() {
+        requestAnimationFrame(() => {
+            rect = { x: 0, y: 0, w: 0, h: 0 };
+            selection.hidden = true;
+        });
+    }
+
+    cropImg.addEventListener('load', resetSelection);
+
+    cropWrap.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        const pos = getPos(e);
+        const handle = e.target.dataset ? e.target.dataset.handle : undefined;
+        if (handle) {
+            drag = { type: 'resize', handle: handle, startX: pos.x, startY: pos.y, orig: Object.assign({}, rect) };
+        } else if (inside(pos)) {
+            drag = { type: 'move', startX: pos.x, startY: pos.y, orig: Object.assign({}, rect) };
+        } else {
+            drag = { type: 'draw', startX: pos.x, startY: pos.y };
+            rect = { x: pos.x, y: pos.y, w: 0, h: 0 };
+        }
+        cropWrap.setPointerCapture(e.pointerId);
+        renderSel();
+    });
+
+    cropWrap.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        const pos = getPos(e);
+        const imgW = imgWidth(), imgH = imgHeight();
+        const min = 30;
+        if (drag.type === 'draw') {
+            rect = normalize(drag.startX, drag.startY, pos.x, pos.y);
+        } else if (drag.type === 'move') {
+            rect = {
+                x: clamp(drag.orig.x + pos.x - drag.startX, 0, imgW - drag.orig.w),
+                y: clamp(drag.orig.y + pos.y - drag.startY, 0, imgH - drag.orig.h),
+                w: drag.orig.w, h: drag.orig.h
+            };
+        } else {
+            let x = drag.orig.x, y = drag.orig.y, w = drag.orig.w, h = drag.orig.h;
+            if (drag.handle.indexOf('e') !== -1) w = Math.max(min, pos.x - x);
+            if (drag.handle.indexOf('s') !== -1) h = Math.max(min, pos.y - y);
+            if (drag.handle.indexOf('w') !== -1) { w = Math.max(min, (x + w) - pos.x); x = pos.x; }
+            if (drag.handle.indexOf('n') !== -1) { h = Math.max(min, (y + h) - pos.y); y = pos.y; }
+            x = clamp(x, 0, imgW - min);
+            y = clamp(y, 0, imgH - min);
+            w = Math.min(w, imgW - x);
+            h = Math.min(h, imgH - y);
+            rect = { x: x, y: y, w: w, h: h };
+        }
+        renderSel();
+    });
+
+    function endDrag() { drag = null; }
+    cropWrap.addEventListener('pointerup', endDrag);
+    cropWrap.addEventListener('pointercancel', endDrag);
+
+    applyCropBtn.addEventListener('click', () => {
+        if (rect.w < 5 || rect.h < 5) {
+            cropMsg.textContent = 'Drag on the image to select a region first.';
+            return;
+        }
+        const sx = rect.x * (cropImg.naturalWidth / imgWidth());
+        const sy = rect.y * (cropImg.naturalHeight / imgHeight());
+        const sw = rect.w * (cropImg.naturalWidth / imgWidth());
+        const sh = rect.h * (cropImg.naturalHeight / imgHeight());
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(sw);
+        canvas.height = Math.round(sh);
+        canvas.getContext('2d').drawImage(cropImg, sx, sy, sw, sh, 0, 0, sw, sh);
+        finalImg.src = canvas.toDataURL('image/jpeg', 0.9);
+        cropMsg.textContent = '';
+        showStep('preview');
+    });
+
+    retakeBtn.addEventListener('click', () => { cropMsg.textContent = ''; showStep('camera'); });
+    cropAgainBtn.addEventListener('click', () => { cropMsg.textContent = ''; showStep('crop'); });
+
+    function dataURLtoBlob(dataUrl) {
+        const parts = dataUrl.split(',');
+        const mime = parts[0].match(/:(.*?);/)[1];
+        const bin = atob(parts[1]);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return new Blob([arr], { type: mime });
+    }
+
+    classifyCameraBtn.addEventListener('click', () => {
+        const blob = dataURLtoBlob(finalImg.src);
+        const file = new File([blob], 'captured.jpg', { type: 'image/jpeg' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        cameraFile.files = dt.files;
+        cameraForm.submit();
+    });
+})();
+</script>
 {% endblock %}
